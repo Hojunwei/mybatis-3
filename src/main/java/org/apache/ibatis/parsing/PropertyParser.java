@@ -18,11 +18,19 @@ package org.apache.ibatis.parsing;
 import java.util.Properties;
 
 /**
+ *
+ * 处理expression的逻辑。
+ * 1.默认值规则。
+ * 2.不存在默认值。
+ *
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
 public class PropertyParser {
 
+  /**
+   * key前缀
+   */
   private static final String KEY_PREFIX = "org.apache.ibatis.parsing.PropertyParser.";
   /**
    * The special property key that indicate whether enable a default value on placeholder.
@@ -43,7 +51,14 @@ public class PropertyParser {
    */
   public static final String KEY_DEFAULT_VALUE_SEPARATOR = KEY_PREFIX + "default-value-separator";
 
+  /**
+   * 没有默认值
+   */
   private static final String ENABLE_DEFAULT_VALUE = "false";
+
+  /**
+   * 默认值的分隔符是：
+   */
   private static final String DEFAULT_VALUE_SEPARATOR = ":";
 
   private PropertyParser() {
@@ -51,8 +66,11 @@ public class PropertyParser {
   }
 
   public static String parse(String string, Properties variables) {
+    // 创建 VariableTokenHandler 对象
     VariableTokenHandler handler = new VariableTokenHandler(variables);
+    // 创建 GenericTokenParser 对象
     GenericTokenParser parser = new GenericTokenParser("${", "}", handler);
+    // 执行解析
     return parser.parse(string);
   }
 
@@ -71,6 +89,12 @@ public class PropertyParser {
       return (variables == null) ? defaultValue : variables.getProperty(key, defaultValue);
     }
 
+    /**
+     * 取值逻辑。
+     *
+     * @param content
+     * @return
+     */
     @Override
     public String handleToken(String content) {
       if (variables != null) {

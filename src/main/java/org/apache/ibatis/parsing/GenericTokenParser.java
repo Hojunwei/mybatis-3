@@ -16,74 +16,105 @@
 package org.apache.ibatis.parsing;
 
 /**
+ *
+ * 通用的handler处理
+ * 从头开始寻找${XXX}表达式，并提交给 handler 进行处理
+ *
  * @author Clinton Begin
  */
 public class GenericTokenParser {
 
-  private final String openToken;
-  private final String closeToken;
-  private final TokenHandler handler;
+    /**
+     * 开始的token字符串
+     */
+    private final String openToken;
 
-  public GenericTokenParser(String openToken, String closeToken, TokenHandler handler) {
-    this.openToken = openToken;
-    this.closeToken = closeToken;
-    this.handler = handler;
-  }
+    /**
+     * 结束的token字符串
+     */
+    private final String closeToken;
+    private final TokenHandler handler;
 
-  public String parse(String text) {
-    if (text == null || text.isEmpty()) {
-      return "";
+    public GenericTokenParser(String openToken, String closeToken, TokenHandler handler) {
+        this.openToken = openToken;
+        this.closeToken = closeToken;
+        this.handler = handler;
     }
-    // search open token
-    int start = text.indexOf(openToken);
-    if (start == -1) {
-      return text;
-    }
-    char[] src = text.toCharArray();
-    int offset = 0;
-    final StringBuilder builder = new StringBuilder();
-    StringBuilder expression = null;
-    while (start > -1) {
-      if (start > 0 && src[start - 1] == '\\') {
-        // this open token is escaped. remove the backslash and continue.
-        builder.append(src, offset, start - offset - 1).append(openToken);
-        offset = start + openToken.length();
-      } else {
-        // found open token. let's search close token.
-        if (expression == null) {
-          expression = new StringBuilder();
-        } else {
-          expression.setLength(0);
+
+    /**
+     *
+     * 从头开始寻找${XXX}表达式，把XXX记录查找对应的值进行替换
+     *
+     * @param text
+     * @return
+     */
+    public String parse(String text) {
+        // 判断为空
+        if (text == null || text.isEmpty()) {
+            return "";
         }
-        builder.append(src, offset, start - offset);
-        offset = start + openToken.length();
-        int end = text.indexOf(closeToken, offset);
-        while (end > -1) {
-          if (end > offset && src[end - 1] == '\\') {
-            // this close token is escaped. remove the backslash and continue.
-            expression.append(src, offset, end - offset - 1).append(closeToken);
-            offset = end + closeToken.length();
-            end = text.indexOf(closeToken, offset);
-          } else {
-            expression.append(src, offset, end - offset);
-            offset = end + closeToken.length();
-            break;
-          }
+        // search open token 寻找开始的token位置
+        int start = text.indexOf(openToken);
+        if (start == -1) { // 不存在，直接返回
+            return text;
         }
-        if (end == -1) {
-          // close token was not found.
-          builder.append(src, start, src.length - start);
-          offset = src.length;
-        } else {
-          builder.append(handler.handleToken(expression.toString()));
-          offset = end + closeToken.length();
+        char[] src = text.toCharArray();
+        int offset = 0;
+
+        // 结果
+        final StringBuilder builder = new StringBuilder();
+        // openToken 和 closeToken之间的表达式
+        StringBuilder expression = null;
+        while (start > -1) {
+            if (start > 0 && src[start - 1] == '\\') {
+                // this open token is escaped. remove the backslash and continue.
+                builder.append(src, offset, start - offset - 1).append(openToken);
+                offset = start + openToken.length();
+            } else {
+                // found open token. let's search close token.
+                // 创建/重置 expression 对象
+                if (expression == null) {
+                    expression = new StringBuilder();
+                } else {
+                    expression.setLength(0);
+                }
+                // 添加 offset 和 openToken 之间的内容，添加到 builder 中
+                builder.append(src, offset, start - offset);
+                // 修改 offset
+                offset = start + openToken.length();
+                // 寻找结束的 closeToken 的位置
+                int end = text.indexOf(closeToken, offset);
+                while (end > -1) {
+                    if (end > offset && src[end - 1] == '\\') {
+                        // this close token is escaped. remove the backslash and continue.
+                        expression.append(src, offset, end - offset - 1).append(closeToken);
+                        offset = end + closeToken.length();
+                        end = text.indexOf(closeToken, offset);
+                    } else {
+                        // 添加${XXX}之间的内容到expression
+                        expression.append(src, offset, end - offset);
+                        // 修改offset
+                        offset = end + closeToken.length();
+                        break;
+                    }
+                }
+                if (end == -1) {
+                    // close token was not found.
+                    builder.append(src, start, src.length - start);
+                    offset = src.length;
+                } else {
+                    // expression的值获取真正的值
+                    builder.append(handler.handleToken(expression.toString()));
+                    offset = end + closeToken.length();
+                }
+            }
+            // 继续，寻找下一个 openToken 的位置
+            start = text.indexOf(openToken, offset);
         }
-      }
-      start = text.indexOf(openToken, offset);
+        // 拼接剩余的部分
+        if (offset < src.length) {
+            builder.append(src, offset, src.length - offset);
+        }
+        return builder.toString();
     }
-    if (offset < src.length) {
-      builder.append(src, offset, src.length - offset);
-    }
-    return builder.toString();
-  }
 }

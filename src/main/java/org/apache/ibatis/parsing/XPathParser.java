@@ -36,7 +36,7 @@ import java.util.Properties;
 
 /**
  *
- *
+ * XML解析，取path，调用PropertyParser替换token值
  *
  * @author Clinton Begin
  * @author Kazuki Shimizu

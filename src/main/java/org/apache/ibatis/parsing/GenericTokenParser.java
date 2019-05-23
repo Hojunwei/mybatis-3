@@ -33,6 +33,10 @@ public class GenericTokenParser {
      * 结束的token字符串
      */
     private final String closeToken;
+
+    /**
+     * 替换token字符串的处理接口
+     */
     private final TokenHandler handler;
 
     public GenericTokenParser(String openToken, String closeToken, TokenHandler handler) {
@@ -43,7 +47,7 @@ public class GenericTokenParser {
 
     /**
      *
-     * 从头开始寻找${XXX}表达式，把XXX记录查找对应的值进行替换
+     * 查找token字符串，调用TokenHandler，返回替换后的字符串
      *
      * @param text
      * @return

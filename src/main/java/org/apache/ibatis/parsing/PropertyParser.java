@@ -19,9 +19,7 @@ import java.util.Properties;
 
 /**
  *
- * 处理expression的逻辑。
- * 1.默认值规则。
- * 2.不存在默认值。
+ * token字符串解析类
  *
  * @author Clinton Begin
  * @author Kazuki Shimizu
@@ -90,7 +88,10 @@ public class PropertyParser {
     }
 
     /**
-     * 取值逻辑。
+     * 替换token值逻辑
+     * 1、判断是否允许默认值。允许默认值、默认值存在，才取默认值
+     * 2、判断token是否存在，配置值。存在返回
+     * 3、返回token值
      *
      * @param content
      * @return
